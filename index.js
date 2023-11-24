@@ -1,7 +1,8 @@
-const express = require('express');
-const app = express();
-const cors = require('cors');
-require('dotenv').config()
+const express = require('express')
+const app = express()
+const cors = require('cors')
+const jwt = require('jsonwebtoken');
+require("dotenv").config();
 const port = process.env.PORT || 5000;
 
 
@@ -36,6 +37,76 @@ async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
         // await client.connect();
+
+
+
+        const userCollection = client.db("FitnessDB").collection("users") 
+
+
+
+
+
+        /**---------------------**---JWT TOKEN Start---**-----------------------**/
+
+
+        //*********JWT Related Api*****//
+        app.post('/jwt', async (req, res) => {
+            const user = req.body;
+            // console.log(user);
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
+            // console.log(token);
+            res.send({ token })
+        })
+
+
+        //**---Middlewares---**//
+        const verifyToken = (req, res, next) => {
+            console.log('Inside Verify Token', req.headers.authorization);
+            if (!req.headers.authorization) {
+                return res.status(401).send({ message: 'Forbidden Access' })
+            }
+
+            const token = req.headers.authorization.split(' ')[1];
+
+            jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+                if (err) {
+                    return res.status(401).send({ message: 'Forbidden Access' })
+                }
+                req.decoded = decoded;
+                next();
+            })
+
+        }
+        /**---------------------**---JWT TOKEN End---**-----------------------**/
+
+
+
+
+        /**User Related Api**/
+
+
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+
+            // Insert Email if user doesnt exists//
+            
+
+            const query = { email: user.email }
+            const existingUser = await userCollection.findOne(query)
+
+            if (existingUser) {
+                return res.send({ message: 'User Already Exists', insertedId: null })
+            }
+
+            const result = await userCollection.insertOne(user)
+            res.send(result)
+        })
+
+
+
+
+
+
 
 
 
