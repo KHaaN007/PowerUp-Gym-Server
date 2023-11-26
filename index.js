@@ -40,7 +40,15 @@ async function run() {
 
 
 
-        const userCollection = client.db("FitnessDB").collection("users") 
+        const userCollection = client.db("FitnessDB").collection("users")
+        const reviewCollection = client.db("FitnessDB").collection("reviews")
+        const newsletterCollection = client.db("FitnessDB").collection("newsletter")
+
+
+
+
+
+
 
 
 
@@ -89,7 +97,7 @@ async function run() {
             const user = req.body;
 
             // Insert Email if user doesnt exists//
-            
+
 
             const query = { email: user.email }
             const existingUser = await userCollection.findOne(query)
@@ -105,6 +113,16 @@ async function run() {
 
 
 
+
+
+
+        /**Review And Testiomonial Related Api**/
+
+        //Get Review Form Review Collection
+        app.get('/review', async (req, res) => {
+            const result = await reviewCollection.find().toArray();
+            res.send(result)
+        })
 
 
 
