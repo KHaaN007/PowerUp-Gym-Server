@@ -130,7 +130,13 @@ async function run() {
 
 
 
+        //Insert Into newsletter Collection
 
+        app.post('/newsletter', async (req, res) => {
+            const cartItem = req.body;
+            const result = await newsletterCollection.insertOne(cartItem)
+            res.send(result)
+        })
 
 
 
