@@ -43,6 +43,7 @@ async function run() {
         const userCollection = client.db("FitnessDB").collection("users")
         const reviewCollection = client.db("FitnessDB").collection("reviews")
         const newsletterCollection = client.db("FitnessDB").collection("newsletter")
+        const beAtrainerCollection = client.db("FitnessDB").collection("beAtrainer")
 
 
 
@@ -114,6 +115,25 @@ async function run() {
 
 
 
+        app.post('/beAtrainer', async (req, res) => {
+            const beAtrainer = req.body;
+            const result = await beAtrainerCollection.insertOne(beAtrainer)
+            res.send(result)
+        })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
         /**Review And Testiomonial Related Api**/
@@ -126,11 +146,7 @@ async function run() {
 
 
 
-
-
-
-
-        //Insert Into newsletter Collection
+        //Insert Into newsletter Collection 
 
         app.post('/newsletter', async (req, res) => {
             const cartItem = req.body;
