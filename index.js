@@ -21,7 +21,7 @@ app.use(express.json())
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.qgvyj9c.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -45,6 +45,7 @@ async function run() {
         const newsletterCollection = client.db("FitnessDB").collection("newsletter")
         const beAtrainerCollection = client.db("FitnessDB").collection("beAtrainer")
         const trainersCollection = client.db("FitnessDB").collection("trainers")
+        const classesCollection = client.db("FitnessDB").collection("classes")
 
 
 
@@ -123,19 +124,48 @@ async function run() {
         })
 
 
-
+        // Get Trainner Data 
         app.get('/trainers', async (req, res) => {
             const result = await trainersCollection.find().toArray();
             res.send(result)
         })
 
+        // Get Data For Trainer Details/Slots Page
+        app.get('/trainerDetail/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await trainersCollection.findOne(query);
+            console.log(result);
+            res.send(result);
+        })
+
+
+        // Get Data For Trainer Details/Slots Page
+        // app.get('/packageDetail/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const query = { _id: new ObjectId(id) }
+        //     const result = await trainersCollection.findOne(query);
+        //     console.log(result);
+        //     res.send(result);
+        // })
 
 
 
+        // Get Data For Clsses Data 
+        app.get('/classes', async (req, res) => {
+            const result = await classesCollection.find().toArray();
+            res.send(result)
+        })
 
 
-
-
+        // Get Data For Classes Details Data
+        app.get('/classesDetail/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await classesCollection.findOne(query);
+            console.log(result);
+            res.send(result);
+        })
 
 
 
