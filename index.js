@@ -44,6 +44,7 @@ async function run() {
         const reviewCollection = client.db("FitnessDB").collection("reviews")
         const newsletterCollection = client.db("FitnessDB").collection("newsletter")
         const beAtrainerCollection = client.db("FitnessDB").collection("beAtrainer")
+        const trainersCollection = client.db("FitnessDB").collection("trainers")
 
 
 
@@ -114,7 +115,7 @@ async function run() {
 
 
 
-
+        // Post Data For Be A Trainer
         app.post('/beAtrainer', async (req, res) => {
             const beAtrainer = req.body;
             const result = await beAtrainerCollection.insertOne(beAtrainer)
@@ -123,7 +124,10 @@ async function run() {
 
 
 
-
+        app.get('/trainers', async (req, res) => {
+            const result = await trainersCollection.find().toArray();
+            res.send(result)
+        })
 
 
 
