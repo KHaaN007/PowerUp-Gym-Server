@@ -46,6 +46,7 @@ async function run() {
         const beAtrainerCollection = client.db("FitnessDB").collection("beAtrainer")
         const trainersCollection = client.db("FitnessDB").collection("trainers")
         const classesCollection = client.db("FitnessDB").collection("classes")
+        const packageBookedCollection = client.db("FitnessDB").collection("packageBooked")
 
 
 
@@ -119,9 +120,22 @@ async function run() {
         // Post Data For Be A Trainer
         app.post('/beAtrainer', async (req, res) => {
             const beAtrainer = req.body;
-            const result = await beAtrainerCollection.insertOne(beAtrainer)
+            const result = await trainersCollection.insertOne(beAtrainer)
             res.send(result)
         })
+
+
+        // Post Data For Be A Package Booked
+        app.post('/packageBooked', async (req, res) => {
+            const packageBooked = req.body;
+            const result = await packageBookedCollection.insertOne(packageBooked)
+            res.send(result)
+        })
+
+
+
+
+
 
 
         // Get Trainner Data 
@@ -185,6 +199,11 @@ async function run() {
         app.post('/newsletter', async (req, res) => {
             const cartItem = req.body;
             const result = await newsletterCollection.insertOne(cartItem)
+            res.send(result)
+        })
+
+        app.get('/newsletter', async (req, res) => {
+            const result = await newsletterCollection.find().toArray();
             res.send(result)
         })
 
