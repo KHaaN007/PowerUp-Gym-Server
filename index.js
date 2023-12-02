@@ -47,6 +47,7 @@ async function run() {
         const trainersCollection = client.db("FitnessDB").collection("trainers")
         const classesCollection = client.db("FitnessDB").collection("classes")
         const packageBookedCollection = client.db("FitnessDB").collection("packageBooked")
+        const articelCollection = client.db("FitnessDB").collection("articels")
 
 
 
@@ -165,6 +166,14 @@ async function run() {
 
 
 
+        // Post Data For Classes
+        app.post('/classes', async (req, res) => {
+            const classes = req.body;
+            const result = await classesCollection.insertOne(classes)
+            res.send(result)
+        })
+
+
         // Get Data For Clsses Data 
         app.get('/classes', async (req, res) => {
             const result = await classesCollection.find().toArray();
@@ -179,6 +188,13 @@ async function run() {
             const result = await classesCollection.findOne(query);
             console.log(result);
             res.send(result);
+        })
+
+
+        app.post('/articles', async (req, res) => {
+            const articles = req.body;
+            const result = await articelCollection.insertOne(articles)
+            res.send(result)
         })
 
 
