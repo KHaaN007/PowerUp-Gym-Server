@@ -95,6 +95,46 @@ async function run() {
 
 
 
+
+
+
+        /**---------------------**---Admin Start---**-----------------------**/
+        app.get('/user/admin/:email', verifyToken, async (req, res) => {
+            const email = req.params?.email;
+            console.log('Role Admin From Email', email);
+            console.log('Role Admin From Decoded', req.decoded?.email);
+            if (email !== req.decoded?.email) {
+                return res.send?.status(403).send({ message: 'Unauthorized Access' })
+            }
+
+            const query = { email: email }
+            const user = await userCollection.findOne(query);
+            let admin = false;
+            if (user) {
+                admin = user?.role === 'admin'
+            }
+            res.send({ admin })
+        })
+
+
+        /**-------------------**---Admin End---**---------------------**/
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         /**User Related Api**/
 
 
@@ -190,11 +230,31 @@ async function run() {
             res.send(result);
         })
 
-
+        // Post Data For Articles
         app.post('/articles', async (req, res) => {
             const articles = req.body;
             const result = await articelCollection.insertOne(articles)
             res.send(result)
+        })
+
+        app.get('/articles', async (req, res) => {
+            const page = Number(req.query.page);
+            const limit = Number(req.query.limit);
+            const skip = (page - 1) * limit
+
+
+            const result = await articelCollection
+                .find()
+                .skip(skip)
+                .limit(limit)
+                .toArray()
+            const totalArticles = await articelCollection.estimatedDocumentCount();
+            res.send({ result, totalArticles })
+
+
+
+            // const result = await articelCollection.find().toArray();
+            // res.send(result)
         })
 
 
@@ -218,7 +278,7 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/newsletter', async (req, res) => {
+        app.get('/newsletter', verifyToken, async (req, res) => {
             const result = await newsletterCollection.find().toArray();
             res.send(result)
         })
