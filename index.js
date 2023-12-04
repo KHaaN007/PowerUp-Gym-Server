@@ -207,6 +207,24 @@ async function run() {
             const result = await userCollection.updateOne(filter, updateDoc)
             res.send(result);
         })
+        app.patch('/users/:email', async (req, res) => {
+            const userInfo = req.body
+            const email = req.params.email
+
+            console.log('214', userInfo);
+            console.log('215', id);
+            const filter = { email: email }
+            const updateDoc = {
+                $set: {
+                    name: userInfo.name,
+                    image: userInfo.image,
+
+                }
+            }
+
+            const result = await userCollection.updateOne(filter, updateDoc)
+            res.send(result);
+        })
         // Change User Role to Trainer
         // app.patch('/user/admin/:id', async (req, res) => {
         //     const id = req.params.id;
@@ -430,7 +448,8 @@ async function run() {
 
 
 
-   
+
+
         // Payment Intent 
         // payment intent
         app.post('/create-payment-intent', async (req, res) => {
@@ -494,8 +513,8 @@ async function run() {
 
 
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
-        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+        // await client.db("admin").command({ ping: 1 });
+        // console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
