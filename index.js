@@ -3,6 +3,7 @@ const app = express()
 const cors = require('cors')
 const jwt = require('jsonwebtoken');
 require("dotenv").config();
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 const port = process.env.PORT || 5000;
 
 
@@ -22,6 +23,7 @@ app.use(express.json())
 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { default: Stripe } = require('stripe');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.qgvyj9c.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -43,11 +45,11 @@ async function run() {
         const userCollection = client.db("FitnessDB").collection("users")
         const reviewCollection = client.db("FitnessDB").collection("reviews")
         const newsletterCollection = client.db("FitnessDB").collection("newsletter")
-        const beAtrainerCollection = client.db("FitnessDB").collection("beAtrainer")
         const trainersCollection = client.db("FitnessDB").collection("trainers")
         const classesCollection = client.db("FitnessDB").collection("classes")
         const packageBookedCollection = client.db("FitnessDB").collection("packageBooked")
         const articelCollection = client.db("FitnessDB").collection("articels")
+        const paymentCollection = client.db("FitnessDB").collection("payment")
 
 
 
@@ -90,7 +92,34 @@ async function run() {
             })
 
         }
-        /**---------------------**---JWT TOKEN End---**-----------------------**/
+        /**------------------**---JWT TOKEN End---**---------------------**/
+
+
+        /*****Verify Admin******/
+        const verifyAdmin = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email: email }
+            const user = await userCollection.findOne(query);
+            const isAdmin = user?.role === 'admin'
+            if (!isAdmin) {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+            next()
+        }
+
+
+
+        /*****Verify Trainer******/
+        const verifyTrainer = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email: email }
+            const user = await userCollection.findOne(query);
+            const isAdmin = user?.role === 'trainer'
+            if (!isAdmin) {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+            next()
+        }
 
 
 
@@ -98,7 +127,11 @@ async function run() {
 
 
 
-        /**---------------------**---Admin Start---**-----------------------**/
+
+
+
+
+        /**---------------**---Admin Start---**------------------**/
         app.get('/user/admin/:email', verifyToken, async (req, res) => {
             const email = req.params?.email;
             console.log('Role Admin From Email', email);
@@ -117,13 +150,32 @@ async function run() {
         })
 
 
-        /**-------------------**---Admin End---**---------------------**/
-
-        
+        /**-----------------**---Admin End---**-------------------**/
 
 
 
 
+
+        /**--------------**---Trainer Verify Start---**----------------**/
+        app.get('/user/trainer/:email', verifyToken, async (req, res) => {
+            const email = req.params?.email;
+            console.log('Role Trainer From Email', email);
+            console.log('Role Trainer From Decoded', req.decoded?.email);
+            if (email !== req.decoded?.email) {
+                return res.send?.status(403).send({ message: 'Unauthorized Access' })
+            }
+
+            const query = { email: email }
+            const user = await userCollection.findOne(query);
+            let trainer = false;
+            if (user) {
+                trainer = user?.role === 'trainer'
+            }
+            res.send({ trainer })
+        })
+
+
+        /**---------------**---Trainer Verify End---**-----------------**/
 
 
 
@@ -136,6 +188,39 @@ async function run() {
 
 
         /**User Related Api**/
+        app.get('/users', async (req, res) => {
+            const result = await userCollection.find().toArray();
+            res.send(result)
+        })
+
+
+        app.patch('/users/:id', async (req, res) => {
+            const id = req.params.id
+            const filter = { _id: new ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    role: 'trainer',
+
+                }
+            }
+
+            const result = await userCollection.updateOne(filter, updateDoc)
+            res.send(result);
+        })
+        // Change User Role to Trainer
+        // app.patch('/user/admin/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const filter = { _id: new ObjectId(id) }
+        //     const updateInfo = {
+        //         $set: {
+        //             role: 'trainer'
+        //         }
+        //     }
+        //     const result = await userCollection.updateOne(filter, updateInfo)
+        //     res.send(result)
+
+        // })
+
 
 
         app.post('/users', async (req, res) => {
@@ -165,6 +250,12 @@ async function run() {
             res.send(result)
         })
 
+        //
+
+
+
+
+
 
         // Post Data For Be A Package Booked
         app.post('/packageBooked', async (req, res) => {
@@ -193,6 +284,31 @@ async function run() {
             console.log(result);
             res.send(result);
         })
+
+        app.patch('/trainers/:email', async (req, res) => {
+            const email = req.params.email
+            const filter = { email: email }
+            console.log('289', filter);
+            const updateDoc = {
+                $set: {
+                    status: 'trainer',
+
+                }
+            }
+            const updateDocRole = {
+                $set: {
+                    role: 'trainer',
+
+                }
+            }
+
+            const trainerResult = await trainersCollection.updateMany(filter, updateDoc)
+            console.log('303', trainerResult);
+            const userResult = await userCollection.updateOne(filter, updateDocRole)
+            console.log('304', userResult);
+            res.send({ trainerResult, userResult });
+        })
+
 
 
         // Get Data For Trainer Details/Slots Page
@@ -278,10 +394,102 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/newsletter', verifyToken, async (req, res) => {
+        app.get('/newsletter', async (req, res) => {
             const result = await newsletterCollection.find().toArray();
             res.send(result)
         })
+        app.get('/payment', verifyToken, async (req, res) => {
+            const result = await paymentCollection.find().toArray();
+            res.send(result)
+        })
+        app.get('/package', verifyToken, async (req, res) => {
+            const result = await packageBookedCollection.find().toArray();
+            res.send(result)
+        })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   
+        // Payment Intent 
+        // payment intent
+        app.post('/create-payment-intent', async (req, res) => {
+            const { price } = req.body;
+            const amount = parseInt(price * 100);
+            console.log(amount, 'amount inside the intent')
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            });
+
+            res.send({
+                clientSecret: paymentIntent.client_secret
+            })
+        });
+
+
+
+        // Post Payment 
+        app.post('/payments', async (req, res) => {
+            const payment = req.body;
+            const paymentResult = await paymentCollection.insertOne(payment);
+
+            // Carefully Delete Each Item From The Cart
+            console.log('Payment Info', payment);
+            // const query = {
+            //     _id: {
+            //         $in: payment.cartIds.map(id => new ObjectId(id))
+            //     }
+            // }
+            // const deleteResult = await cartCollection.deleteMany(query)
+            res.send({ paymentResult })
+        })
+
+        app.get('/payments/:email', verifyToken, async (req, res) => {
+            const query = { email: req.params.email }
+            if (req.params.email !== req.decoded.email) {
+                return res.status(403).send({ message: 'forbidden access' });
+            }
+            const result = await paymentCollection.find(query).toArray();
+            res.send(result);
+        })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
